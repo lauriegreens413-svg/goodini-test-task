@@ -1,0 +1,83 @@
+{
+  "name": "Nano Banana Mock",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nano-banana-mock",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43bc347f-fb9f-4547-8bb7-23aed0ac0c22",
+      "name": "nano-banana-mock",
+      "webhookId": "b42f3a13-c6e7-4bd3-ab13-58431dae9e77"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('nano-banana-mock').first().json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bb77dab9-ac27-4f07-ae00-5537138fa24e",
+      "name": "mock-response"
+    }
+  ],
+  "pinData": {
+    "nano-banana-mock": [
+      {
+        "json": {
+          "image_id": "${{ $json.render_id }}",
+          "parameters": {
+            "structure_scale": 0.6,
+            "cfg_scale": 7.5,
+            "steps": 50,
+            "sampler": "DPM++"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "nano-banana-mock": {
+      "main": [
+        [
+          {
+            "node": "mock-response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "04b40bcf-eca3-4b32-930b-3116fbaf7262",
+  "meta": {
+    "instanceId": "aff49296f31dfc1d06552f714794a6782666e4ed0da09918fbbf7c39f31913e5"
+  },
+  "id": "2tdq97merk7USvlkUPJz1",
+  "tags": [
+    {
+      "updatedAt": "2026-01-19T08:52:23.732Z",
+      "createdAt": "2026-01-19T08:52:23.732Z",
+      "id": "J6sZdkMtPimpjzDv",
+      "name": "Quality Control"
+    }
+  ]
+}
