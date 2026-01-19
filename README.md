@@ -109,7 +109,6 @@
     "time_of_day": "golden_hour"
   }
 }
-````
 
 ### Логика workflow
 
