@@ -41,7 +41,7 @@
         ├── screenshot-1.png
         ├── screenshot-2.png
         └── ...
-
+```
 
 
 - `workflows/*.json` — экспортированные n8n-воркфлоу  
