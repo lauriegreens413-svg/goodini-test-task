@@ -23,8 +23,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO goodini.jobs (property_id, status)\nVALUES ('{{ $('render-analysis').first().json.property_id }}', 'QUEUED')\nRETURNING id, property_id, status, created_at;",
-        "options": {}
+        "query": "INSERT INTO goodini.jobs (property_id, status)\nVALUES ($1, 'QUEUED')\nRETURNING id, property_id, status, created_at;",
+        "options": {
+          "queryReplacement": "={{\n[\n$('render-analysis').first().json.property_id\n]\n}}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -44,8 +46,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO goodini.renders (job_id, source_image_url)\nVALUES (\n  '{{ $('set_job_id').first().json.job_id }}',\n  '{{ $('render-analysis').first().json.image_url }}'\n)\nRETURNING id;",
-        "options": {}
+        "query": "INSERT INTO goodini.renders (job_id, source_image_url)\nVALUES ($1, $2)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [   $('set_job_id').first().json.job_id,   $('render-analysis').first().json.image_url ] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -65,8 +69,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.jobs\nSET\n  status = 'PROCESSING',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
-        "options": {}
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'PROCESSING',\n  updated_at = NOW()\nWHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [\n$('set_job_id').item.json.job_id\n] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -164,8 +170,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
-        "options": {}
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('set_job_id').item.json.job_id ] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -185,9 +193,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.renders\nSET\n  detected_shot_type = $${{ $('parse_output').first().json.detected_shot_type }}$$,\n  confidence = {{ $('parse_output').first().json.confidence }},\n  generated_prompt = $${{ $('parse_output').first().json.generated_prompt }}$$,\n  technical_tags = $${{ JSON.stringify($('parse_output').first().json.technical_tags) }}$$::jsonb,\n  motion_recommendation = $${{ $('parse_output').first().json.motion_recommendation }}$$,\n  full_analysis = $${{ JSON.stringify($('parse_output').first().json.full_analysis) }}$$::jsonb,\n  processing_time_sec = {{ $('calc_processing_time').first().json.processing_time_sec }},\n  error_message = NULL\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
+        "query": "UPDATE goodini.renders\nSET\n  detected_shot_type = $1,\n  confidence = $2,\n  generated_prompt = $3,\n  technical_tags = $4::jsonb,\n  motion_recommendation = $5,\n  full_analysis = $6::jsonb,\n  processing_time_sec = $7,\n  error_message = NULL\nWHERE id = $8;",
         "options": {
-          "queryReplacement": "={{$('parse_output').first().json.detected_shot_type}},{{$('parse_output').first().json.confidence}},{{$('parse_output').first().json.generated_prompt}},{{ JSON.stringify($('parse_output').first().json.technical_tags) }},{{$('parse_output').first().json.motion_recommendation}},{{ JSON.stringify($('parse_output').first().json.full_analysis) }},{{$('calc_processing_time').first().json.processing_time_sec}},{{ $('set_render_id').item.json.render_id }}"
+          "queryReplacement": "={{ [\n$('parse_output').first().json.detected_shot_type,\n$('parse_output').first().json.confidence,\n$('parse_output').first().json.generated_prompt,\nJSON.stringify($('parse_output').first().json.technical_tags),\n$('parse_output').first().json.motion_recommendation,\nJSON.stringify($('parse_output').first().json.full_analysis),\n$('calc_processing_time').first().json.processing_time_sec,\n$('set_render_id').item.json.render_id\n] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -208,8 +216,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.jobs\nSET\n  status = 'CLASSIFIED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
-        "options": {}
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'CLASSIFIED',\n  updated_at = NOW()\nWHERE id = $1;\n",
+        "options": {
+          "queryReplacement": "={{ [ $('set_job_id').item.json.job_id ] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -265,8 +275,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.renders\nSET\n  error_message = $${{ $('analyze_render').first().json.error?.message || 'Request failed' }}$$,\n  full_analysis = $${{ JSON.stringify($('analyze_render').first().json.error) }}$$::jsonb\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
-        "options": {}
+        "query": "UPDATE goodini.renders\nSET\n  error_message = $1,\n  full_analysis = $2::jsonb\nWHERE id = $3;",
+        "options": {
+          "queryReplacement": "={{ [ $('analyze_render').first().json.error?.message || 'Request failed', JSON.stringify($('analyze_render').first().json.error), $('set_render_id').item.json.render_id ] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -454,11 +466,11 @@
           "conditions": [
             {
               "id": "831e79c8-8b40-4081-8a26-e457ed0ca63a",
-              "leftValue": "={{ !$('check_duplicates').first().job_id }}",
+              "leftValue": "={{ Object.keys($('check_duplicates').first().json).length > 0 }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
-                "operation": "true",
+                "operation": "false",
                 "singleValue": true
               }
             }
@@ -528,9 +540,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.renders\nSET\n  full_analysis = '{{ JSON.stringify($('parse_output').first().json.full_analysis) }}'::jsonb,\n  processing_time_sec = {{ $('calc_processing_time').first().json.processing_time_sec }},\n  error_message = $${{$('parse_output').first().json.error}}$$\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
+        "query": "UPDATE goodini.renders\nSET\n  full_analysis = $1::jsonb,\n  processing_time_sec = $2,\n  error_message = $3\nWHERE id = $4;",
         "options": {
-          "queryReplacement": "={{$('parse_output').first().json.detected_shot_type}},{{$('parse_output').first().json.confidence}},{{$('parse_output').first().json.generated_prompt}},{{ JSON.stringify($('parse_output').first().json.technical_tags) }},{{$('parse_output').first().json.motion_recommendation}},{{ JSON.stringify($('parse_output').first().json.full_analysis) }},{{$('calc_processing_time').first().json.processing_time_sec}},{{ $('set_render_id').item.json.render_id }}"
+          "queryReplacement": "={{ [\nJSON.stringify($('parse_output').first().json.full_analysis),\n$('calc_processing_time').first().json.processing_time_sec,\n$('parse_output').first().json.error,\n$('set_render_id').item.json.render_id\n] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -551,8 +563,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
-        "options": {}
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('set_job_id').item.json.job_id ] }}"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
@@ -620,7 +634,7 @@
       {
         "json": {
           "event": "new_render_uploaded",
-          "property_id": "magnolia_dubai_03001",
+          "property_id": "magnolia_dubai_0336",
           "image_url": "https://picsum.photos/768/512.jpg",
           "context": {
             "location": "Dubai Downtown",
@@ -867,7 +881,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "ba36f08c-1374-46d1-8804-e69d102d7a03",
+  "versionId": "4048d934-3d14-479c-a33c-9dceea8e8564",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aff49296f31dfc1d06552f714794a6782666e4ed0da09918fbbf7c39f31913e5"
