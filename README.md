@@ -22,13 +22,25 @@
 ## Структура репозитория
 
 .
-├── workflows/
-│   ├── task1-render-analysis.json
-│   └── task2-qc-retry.json
+├── README.md
 ├── sql/
 │   ├── schema.sql
 │   └── queries.sql
-└── README.md
+├── workflows/
+│   ├── task1/
+│   │   └── task1.json
+│   └── task2/
+│       └── task2.json
+└── screenshots/
+    ├── task1/
+    │   ├── screenshot-1.png
+    │   ├── screenshot-2.png
+    │   └── ...
+    └── task2/
+        ├── screenshot-1.png
+        ├── screenshot-2.png
+        └── ...
+
 
 
 - `workflows/*.json` — экспортированные n8n-воркфлоу  
