@@ -1,0 +1,881 @@
+{
+  "name": "Render Analysis – Vision Classification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "render-analysis",
+        "responseMode": "responseNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        16
+      ],
+      "id": "2d138ec4-2071-4851-bd1f-954744b28ebe",
+      "name": "render-analysis",
+      "webhookId": "4f093425-5f51-49ca-86e9-b7ce1ed551eb"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO goodini.jobs (property_id, status)\nVALUES ('{{ $('render-analysis').first().json.property_id }}', 'QUEUED')\nRETURNING id, property_id, status, created_at;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        320,
+        0
+      ],
+      "id": "f6000ca1-5a43-4d98-bf59-8ed244a6008b",
+      "name": "insert_jobs",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO goodini.renders (job_id, source_image_url)\nVALUES (\n  '{{ $('set_job_id').first().json.job_id }}',\n  '{{ $('render-analysis').first().json.image_url }}'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        704,
+        0
+      ],
+      "id": "935acdc6-de50-48af-b8df-ab44104e2328",
+      "name": "insert_render",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'PROCESSING',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "28e410a5-af6b-4696-87d5-4c5c41eb12a4",
+      "name": "job_to_processing",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "507878d0-74f7-44de-a108-4502a25a94f5",
+              "name": "job_id",
+              "value": "={{ $('insert_jobs').first().json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        0
+      ],
+      "id": "cd22d7f0-516c-437b-a483-4a31c47e3e41",
+      "name": "set_job_id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "507878d0-74f7-44de-a108-4502a25a94f5",
+              "name": "render_id",
+              "value": "={{ $('insert_render').first().json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        0
+      ],
+      "id": "5493adb1-715f-4db6-8878-1c7ac947a509",
+      "name": "set_render_id"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"meta-llama/llama-3.2-11b-vision-instruct\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"ROLE: Vision AI Shot Classifier. TASK: Analyze this image and respond ONLY with valid JSON. OUTPUT: { \\\"detected_scene\\\": \\\"SHOT_XX\\\", \\\"confidence\\\": 0.95, \\\"generated_prompt\\\": \\\"...\\\", \\\"technical_tags\\\": [...], \\\"motion_recommendation\\\": \\\"MOTION_X\\\" }\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"{{ $('render-analysis').first().json.image_url }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"temperature\": 0.2\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "bef4cda1-11b9-4c21-8640-5c89bd2b8edc",
+      "name": "analyze_render",
+      "credentials": {
+        "openRouterApi": {
+          "id": "dbOUXdt9oQxf42z2",
+          "name": "OpenRouter account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        144
+      ],
+      "id": "26e80839-2505-43d0-be81-48c2d5106a75",
+      "name": "update_job_fail",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.renders\nSET\n  detected_shot_type = $${{ $('parse_output').first().json.detected_shot_type }}$$,\n  confidence = {{ $('parse_output').first().json.confidence }},\n  generated_prompt = $${{ $('parse_output').first().json.generated_prompt }}$$,\n  technical_tags = $${{ JSON.stringify($('parse_output').first().json.technical_tags) }}$$::jsonb,\n  motion_recommendation = $${{ $('parse_output').first().json.motion_recommendation }}$$,\n  full_analysis = $${{ JSON.stringify($('parse_output').first().json.full_analysis) }}$$::jsonb,\n  processing_time_sec = {{ $('calc_processing_time').first().json.processing_time_sec }},\n  error_message = NULL\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
+        "options": {
+          "queryReplacement": "={{$('parse_output').first().json.detected_shot_type}},{{$('parse_output').first().json.confidence}},{{$('parse_output').first().json.generated_prompt}},{{ JSON.stringify($('parse_output').first().json.technical_tags) }},{{$('parse_output').first().json.motion_recommendation}},{{ JSON.stringify($('parse_output').first().json.full_analysis) }},{{$('calc_processing_time').first().json.processing_time_sec}},{{ $('set_render_id').item.json.render_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2784,
+        -240
+      ],
+      "id": "a0914816-21b2-45d7-9533-9f8c6383b38b",
+      "name": "update_render_success",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'CLASSIFIED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2992,
+        -240
+      ],
+      "id": "6a16cbd0-5f81-41f2-b4fb-d64100f6eee6",
+      "name": "update_job_success",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e69acfeb-cb3d-440c-8e7d-defd984bc15a",
+              "name": "start_ts_ms",
+              "value": "={{ Date.now() }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        0
+      ],
+      "id": "0823dd3e-1e31-43aa-9c20-69b79928749a",
+      "name": "set_start_ts"
+    },
+    {
+      "parameters": {
+        "jsCode": "const start = $('set_start_ts').first().json.start_ts_ms;\nif (!start) {\n  return [{ processing_time_sec: null }];\n}\n\nconst elapsedMs = Date.now() - start;\n\nreturn [{\n  processing_time_sec: Math.round(elapsedMs / 1000)\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        -112
+      ],
+      "id": "3107b2e3-83bc-481a-b172-163c4a83b6aa",
+      "name": "calc_processing_time"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.renders\nSET\n  error_message = $${{ $('analyze_render').first().json.error?.message || 'Request failed' }}$$,\n  full_analysis = $${{ JSON.stringify($('analyze_render').first().json.error) }}$$::jsonb\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2032,
+        144
+      ],
+      "id": "c4fb3ee5-7ddc-417a-bc02-c3a3a2d2cd56",
+      "name": "update_render_fail",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"CLASSIFIED\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3248,
+        -240
+      ],
+      "id": "b2e156cd-76d1-41ec-9ef0-6274ea559346",
+      "name": "success_response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"FAILED\"\n}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2432,
+        144
+      ],
+      "id": "d568c08a-d284-403a-aaf2-1a1fb9f94fd0",
+      "name": "fail_response"
+    },
+    {
+      "parameters": {
+        "content": "### Создаем job и render",
+        "height": 304,
+        "width": 736
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        288,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "f937551b-a38f-4354-aca3-fa26f43b84fa",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "### Переводим job в статус  PROCESSING",
+        "height": 224,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1088,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "5a84296e-8a4e-4a4f-8e08-b1f1b8cc39f6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Записываем ts для подсчета processing_time и отправляем запрос",
+        "height": 272,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1360,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "15e6d702-b4ce-4fc0-9341-c8e9efc23c90",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "### Считаем processing_time, парсим результат запроса",
+        "height": 272,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "d78632f7-8133-4960-b6f9-deea4a2598a1",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "### Апдейт записей в базе",
+        "height": 208,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2736,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "c74a208b-79c1-4ead-b057-e92e9fcc387f",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $('analyze_render').first().json;\nconst content = resp.choices?.[0]?.message?.content;\n\nif (!content) {\n  return [{ ok: false, error: 'No choices[0].message.content', full_analysis: resp }];\n}\n\nconst start = content.indexOf('{');\nconst end = content.lastIndexOf('}');\nif (start === -1 || end === -1 || end <= start) {\n  return [{ ok: false, error: 'Model output does not contain JSON object', raw: content, full_analysis: resp }];\n}\n\nconst jsonStr = content.slice(start, end + 1);\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr);\n} catch (e) {\n  return [{ ok: false, error: `Failed to parse JSON: ${e.message}`, raw: jsonStr, full_analysis: resp }];\n}\n\nreturn [{\n  ok: true,\n  detected_shot_type: parsed.detected_scene ?? null,\n  confidence: parsed.confidence ?? null,\n  generated_prompt: parsed.generated_prompt ?? null,\n  technical_tags: parsed.technical_tags ?? null,\n  motion_recommendation: parsed.motion_recommendation ?? null,\n  full_analysis: resp,\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -112
+      ],
+      "id": "44a92d40-2ed4-4574-b80e-101d5e938e99",
+      "name": "parse_output"
+    },
+    {
+      "parameters": {
+        "content": "### Апдейт записей в базе в случае ошибки",
+        "height": 272,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "8a4bc5af-edc2-489d-990c-f87a9fca798e",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  r.id   AS render_id,\n  r.job_id,\n  j.status,\n  j.property_id\nFROM goodini.renders r\nJOIN goodini.jobs j ON j.id = r.job_id\nWHERE\n  r.source_image_url = $1\n  AND j.property_id = $2\nORDER BY r.created_at DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{\n[\n  $('render-analysis').first().json.image_url,\n  $('render-analysis').first().json.property_id\n]\n}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "d6ea2275-c8c0-4a6a-b36f-4f240a2ecc57",
+      "name": "check_duplicates",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "831e79c8-8b40-4081-8a26-e457ed0ca63a",
+              "leftValue": "={{ !$('check_duplicates').first().job_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        16
+      ],
+      "id": "bd963129-1447-4882-8d6f-d2165fd67657",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"DUPLICATE\",\n  \"job_id\": \"{{ $('check_duplicates').first().json.job_id }}\",\n  \"render_id\": \"{{ $('check_duplicates').first().json.render_id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        192,
+        272
+      ],
+      "id": "5412608f-be2e-412f-b8ec-8874db44414d",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2a8d301e-1418-4367-b26e-0da63b094e79",
+              "leftValue": "={{ $('parse_output').first().json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2464,
+        -112
+      ],
+      "id": "e070ddcf-9a70-4948-92c9-50e66d25c7c7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.renders\nSET\n  full_analysis = '{{ JSON.stringify($('parse_output').first().json.full_analysis) }}'::jsonb,\n  processing_time_sec = {{ $('calc_processing_time').first().json.processing_time_sec }},\n  error_message = $${{$('parse_output').first().json.error}}$$\nWHERE id = $${{ $('set_render_id').item.json.render_id }}$$;",
+        "options": {
+          "queryReplacement": "={{$('parse_output').first().json.detected_shot_type}},{{$('parse_output').first().json.confidence}},{{$('parse_output').first().json.generated_prompt}},{{ JSON.stringify($('parse_output').first().json.technical_tags) }},{{$('parse_output').first().json.motion_recommendation}},{{ JSON.stringify($('parse_output').first().json.full_analysis) }},{{$('calc_processing_time').first().json.processing_time_sec}},{{ $('set_render_id').item.json.render_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2784,
+        -16
+      ],
+      "id": "70b0191d-26be-4b2f-a054-f0d6be0c8797",
+      "name": "update_render_parse_fail",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE goodini.jobs\nSET\n  status = 'FAILED',\n  updated_at = NOW()\nWHERE id = '{{ $('set_job_id').item.json.job_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2992,
+        -16
+      ],
+      "id": "13dcfd85-a857-471e-abf9-07415b116244",
+      "name": "update_job_parse_fail",
+      "credentials": {
+        "postgres": {
+          "id": "T6ZQPFcajjVaL8Qh",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"FAILED\",\n  \"error\": \"Output parsing failed\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3248,
+        -16
+      ],
+      "id": "a21d38f7-4604-45a8-8ca0-7454696b8870",
+      "name": "parse_failed_response"
+    },
+    {
+      "parameters": {
+        "content": "### Апдейт записей в базе (ошибка парсинга)",
+        "height": 208,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2736,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "464dc62d-1ba5-485f-80fe-369dd2bd6d2e",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "### Дедупликация",
+        "height": 336,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "7d796e5e-e80f-4715-8084-86a64d1dafa5",
+      "name": "Sticky Note7"
+    }
+  ],
+  "pinData": {
+    "render-analysis": [
+      {
+        "json": {
+          "event": "new_render_uploaded",
+          "property_id": "magnolia_dubai_03001",
+          "image_url": "https://picsum.photos/768/512.jpg",
+          "context": {
+            "location": "Dubai Downtown",
+            "time_of_day": "golden_hour"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "render-analysis": {
+      "main": [
+        [
+          {
+            "node": "check_duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insert_jobs": {
+      "main": [
+        [
+          {
+            "node": "set_job_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insert_render": {
+      "main": [
+        [
+          {
+            "node": "set_render_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "job_to_processing": {
+      "main": [
+        [
+          {
+            "node": "set_start_ts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_job_id": {
+      "main": [
+        [
+          {
+            "node": "insert_render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_render_id": {
+      "main": [
+        [
+          {
+            "node": "job_to_processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analyze_render": {
+      "main": [
+        [
+          {
+            "node": "calc_processing_time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "update_render_fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_render_success": {
+      "main": [
+        [
+          {
+            "node": "update_job_success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_start_ts": {
+      "main": [
+        [
+          {
+            "node": "analyze_render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calc_processing_time": {
+      "main": [
+        [
+          {
+            "node": "parse_output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_render_fail": {
+      "main": [
+        [
+          {
+            "node": "update_job_fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_job_success": {
+      "main": [
+        [
+          {
+            "node": "success_response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_job_fail": {
+      "main": [
+        [
+          {
+            "node": "fail_response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse_output": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_duplicates": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "insert_jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "update_render_success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "update_render_parse_fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_render_parse_fail": {
+      "main": [
+        [
+          {
+            "node": "update_job_parse_fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_job_parse_fail": {
+      "main": [
+        [
+          {
+            "node": "parse_failed_response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "3b4e734e-3cf3-4c88-8889-6c9b17f6e9f2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aff49296f31dfc1d06552f714794a6782666e4ed0da09918fbbf7c39f31913e5"
+  },
+  "id": "Q2sJh2QGGDgWaZ5CMmE9L",
+  "tags": [
+    {
+      "updatedAt": "2026-01-19T08:52:49.009Z",
+      "createdAt": "2026-01-19T08:52:49.009Z",
+      "id": "JrWov4i3aK2S561M",
+      "name": "Vision Analysis"
+    }
+  ]
+}
