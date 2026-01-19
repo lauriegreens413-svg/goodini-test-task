@@ -1,4 +1,5 @@
 ```md
+````
 # AI Pipeline — n8n + PostgreSQL  
 **Test Assignment: Backend Engineer / n8n Architect**
 
@@ -109,6 +110,7 @@
     "time_of_day": "golden_hour"
   }
 }
+````
 
 ### Логика workflow
 
