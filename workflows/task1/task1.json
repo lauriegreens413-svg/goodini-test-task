@@ -150,6 +150,9 @@
       ],
       "id": "bef4cda1-11b9-4c21-8640-5c89bd2b8edc",
       "name": "analyze_render",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
       "credentials": {
         "openRouterApi": {
           "id": "dbOUXdt9oQxf42z2",
@@ -864,7 +867,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "3b4e734e-3cf3-4c88-8889-6c9b17f6e9f2",
+  "versionId": "ba36f08c-1374-46d1-8804-e69d102d7a03",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aff49296f31dfc1d06552f714794a6782666e4ed0da09918fbbf7c39f31913e5"
