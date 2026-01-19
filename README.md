@@ -20,8 +20,6 @@
 
 ## Структура репозитория
 
-```
-
 .
 ├── workflows/
 │   ├── task1-render-analysis.json
@@ -31,7 +29,6 @@
 │   └── queries.sql
 └── README.md
 
-````
 
 - `workflows/*.json` — экспортированные n8n-воркфлоу  
 - `sql/schema.sql` — схема БД и индексы  
