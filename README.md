@@ -234,12 +234,19 @@ QC-результат **апсертится в текущую попытку**,
 * Attempt 3 → 0.70
 * Далее → `MANUAL_REVIEW`
 
+generation_attemps:
+
 | id                                   | render_id                            | attempt_number | parameters                                                           | qc_verdict | failure_reason                      | nano_banana_response | created_at                 |
 |--------------------------------------|--------------------------------------|----------------|----------------------------------------------------------------------|------------|-------------------------------------|----------------------|---------------------------|
 | 9823bdb7-4930-4483-81b2-9be13f6d2bee | 59177b49-b664-4cb1-8dc4-52712cadee2a | 3              | {"steps":50,"sampler":"DPM++","cfg_scale":7.5,"structure_scale":0.7} | FAIL       | Geometry distortion on window frame | {"body":{"image_id":"59177b49-b664-4cb1-8dc4-52712cadee2a","parameters":{"steps":50,"sampler":"DPM++","cfg_scale":7.5,"structure_scale":0.7}},"query":{},"params":{},"headers":{"host":"lauriegreens.app.n8n.cloud","accept":"application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7","cf-ray":"9c078a90a35fdc6e-FRA","cdn-loop":"cloudflare; loops=1; subreqs=1","cf-ew-via":"15","cf-worker":"n8n.cloud","x-real-ip":"20.218.174.11","cf-visitor":"{\"scheme\":\"https\"}","user-agent":"axios/1.12.0","cf-ipcountry":"DE","content-type":"application/json","x-is-trusted":"yes","content-length":"133","accept-encoding":"gzip, br","x-forwarded-for":"20.218.174.11, 172.71.144.47","cf-connecting-ip":"20.218.174.11","x-forwarded-host":"lauriegreens.app.n8n.cloud","x-forwarded-port":"443","x-forwarded-proto":"https","x-forwarded-server":"traefik-prod-users-gwc-76-b4b8c88f-zkxqz"},"webhookUrl":"https://lauriegreens.app.n8n.cloud/webhook/nano-banana-mock","executionMode":"production"} | 2026-01-19 15:59:47.235031 |
 | 464d453f-d0a2-4ac1-91ea-ae4723192dc0 | 59177b49-b664-4cb1-8dc4-52712cadee2a | 2              | {"steps":50,"sampler":"DPM++","cfg_scale":7.5,"structure_scale":0.6} | FAIL       | Geometry distortion on window frame | {"body":{"image_id":"59177b49-b664-4cb1-8dc4-52712cadee2a","parameters":{"steps":50,"sampler":"DPM++","cfg_scale":7.5,"structure_scale":0.6}},"query":{},"params":{},"headers":{"host":"lauriegreens.app.n8n.cloud","accept":"application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7","cf-ray":"9c078a6b73e2db12-FRA","cdn-loop":"cloudflare; loops=1; subreqs=1","cf-ew-via":"15","cf-worker":"n8n.cloud","x-real-ip":"20.218.174.11","cf-visitor":"{\"scheme\":\"https\"}","user-agent":"axios/1.12.0","cf-ipcountry":"DE","content-type":"application/json","x-is-trusted":"yes","content-length":"133","accept-encoding":"gzip, br","x-forwarded-for":"20.218.174.11, 172.71.148.159","cf-connecting-ip":"20.218.174.11","x-forwarded-host":"lauriegreens.app.n8n.cloud","x-forwarded-port":"443","x-forwarded-proto":"https","x-forwarded-server":"traefik-prod-users-gwc-76-b4b8c88f-zkxqz"},"webhookUrl":"https://lauriegreens.app.n8n.cloud/webhook/nano-banana-mock","executionMode":"production"} | 2026-01-19 15:59:41.277417 |
 | 1f2964fe-5e1a-48a5-8381-32930dcc4a7a | 59177b49-b664-4cb1-8dc4-52712cadee2a | 1              | null                                                                 | FAIL       | Geometry distortion on window frame | null                 | 2026-01-19 15:59:41.21922  |
 
+
+jobs:
+| id                                   | property_id          | status        | batch_id | created_at                 | updated_at                 |
+| ------------------------------------ | -------------------- | ------------- | -------- | -------------------------- | -------------------------- |
+| 9ad61b7e-f47d-4238-8031-00230dc28bd3 | magnolia_dubai_03001 | MANUAL_REVIEW | null     | 2026-01-19 15:13:32.212252 | 2026-01-19 15:59:50.284416 |
 
 ---
 
