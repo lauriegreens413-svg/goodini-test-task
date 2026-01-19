@@ -44,8 +44,6 @@
 
 - **PostgreSQL credentials**
 - **Vision API key** (Perplexity / OpenRouter)
-- **WEBHOOK_BASE_URL**
-- *(опционально)* Slack credentials для MANUAL_REVIEW
 
 ---
 
@@ -61,7 +59,7 @@
 - `PROCESSING`
 - `CLASSIFIED`
 - `FAILED`
-- `GENERATION_FAILED`
+- `GENERATION_FAILED` - статус добавлен для отметки тикетов с ошибкой генерации файла от Nano Banana API
 - `MANUAL_REVIEW`
 
 ---
